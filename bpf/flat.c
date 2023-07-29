@@ -147,7 +147,7 @@ int flat(struct __sk_buff* skb) {
         return TC_ACT_OK;
     }
 
-    // Cehck if TCP/UDP header is not fitting this packet
+    // Check if TCP/UDP header is fitting this packet
     if (head + offset + sizeof(struct tcphdr) > tail || head + offset + sizeof(struct udphdr) > tail) {
         return TC_ACT_OK;
     }
