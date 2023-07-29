@@ -3,6 +3,7 @@ package probe
 import (
 	"context"
 	"fmt"
+	"log"
 	"os"
 
 	"github.com/cilium/ebpf/perf"
@@ -22,7 +23,18 @@ type probe struct {
 	filters    []*netlink.BpfFilter
 }
 
+func setRlimit() error {
+	log.Println("Setting Rlimit")
+
+	return unix.Setrlimit(unix.RLIMIT_MEMLOCK, &unix.Rlimit{
+		Cur: 1024 * 1024 * 10,
+		Max: 1024 * 1024 * 10,
+	})
+}
+
 func (p *probe) loadObjects() error {
+	log.Printf("Loading probe object to kernel")
+
 	objs := probeObjects{}
 
 	if err := loadProbeObjects(&objs, nil); err != nil {
@@ -35,6 +47,8 @@ func (p *probe) loadObjects() error {
 }
 
 func (p *probe) createQdisc() error {
+	log.Printf("Creating qdisc")
+
 	p.qdisc = clsact.NewClsAct(&netlink.QdiscAttrs{
 		LinkIndex: p.iface.Attrs().Index,
 		Handle:    netlink.MakeHandle(0xffff, 0),
@@ -49,6 +63,8 @@ func (p *probe) createQdisc() error {
 }
 
 func (p *probe) createFilters() error {
+	log.Printf("Creating qdisc filters")
+
 	addFilter := func(attrs netlink.FilterAttrs) {
 		p.filters = append(p.filters, &netlink.BpfFilter{
 			FilterAttrs:  attrs,
@@ -95,6 +111,8 @@ func (p *probe) createFilters() error {
 }
 
 func newProbe(iface netlink.Link) (*probe, error) {
+	log.Println("Creating a new probe")
+
 	if err := setRlimit(); err != nil {
 		return nil, err
 	}
@@ -102,7 +120,7 @@ func newProbe(iface netlink.Link) (*probe, error) {
 	handle, err := netlink.NewHandle(unix.NETLINK_ROUTE)
 
 	if err != nil {
-		fmt.Println(err)
+		log.Fatalf("Failed getting netlink handle: %v", err)
 		os.Exit(1)
 	}
 
@@ -112,14 +130,17 @@ func newProbe(iface netlink.Link) (*probe, error) {
 	}
 
 	if err := prbe.loadObjects(); err != nil {
+		log.Printf("Failed loading probe objects: %v", err)
 		return nil, err
 	}
 
 	if err := prbe.createQdisc(); err != nil {
+		log.Printf("Failed creating qdisc: %v", err)
 		return nil, err
 	}
 
 	if err := prbe.createFilters(); err != nil {
+		log.Printf("Failed creating qdisc filters: %v", err)
 		return nil, err
 	}
 
@@ -127,26 +148,36 @@ func newProbe(iface netlink.Link) (*probe, error) {
 }
 
 func (p *probe) Close() error {
+	log.Println("Removing qdisc")
+
 	if err := p.handle.QdiscDel(p.qdisc); err != nil {
+		log.Println("Failed deleting qdisc")
 		return err
 	}
 
+	log.Println("Removing qdisc filters")
 	for _, filter := range p.filters {
 		if err := p.handle.FilterDel(filter); err != nil {
+			log.Println("Failed deleting qdisc filters")
 			return err
 		}
 	}
 
+	log.Println("Closing eBPF object")
 	if err := p.bpfObjects.Close(); err != nil {
+		log.Println("Failed closing eBPF object")
 		return err
 	}
 
+	log.Println("Deleting handle")
 	p.handle.Delete()
 
 	return nil
 }
 
 func Run(ctx context.Context, iface netlink.Link) error {
+	log.Println("Starting up the probe")
+
 	probe, err := newProbe(iface)
 
 	if err != nil {
@@ -155,19 +186,20 @@ func Run(ctx context.Context, iface netlink.Link) error {
 
 	pipe := probe.bpfObjects.probeMaps.Pipe
 
-	rd, err := perf.NewReader(pipe, 10)
+	reader, err := perf.NewReader(pipe, 10)
 
 	if err != nil {
+		log.Println("Failed creating perf reader")
 		return err
 	}
 
-	defer rd.Close()
+	defer reader.Close()
 
 	c := make(chan []byte)
 
 	go func() {
 		for {
-			event, err := rd.Read()
+			event, err := reader.Read()
 			if err != nil {
 				fmt.Println(err)
 				return
@@ -180,19 +212,14 @@ func Run(ctx context.Context, iface netlink.Link) error {
 		select {
 		case <-ctx.Done():
 			return probe.Close()
+
 		case pkt := <-c:
 			packetAttrs, ok := packet.UnmarshalBinary(pkt)
 			if !ok {
-				fmt.Println("Could not parse IP address")
+				log.Printf("Could not unmarshall packet: %+v", pkt)
+				continue
 			}
 			packet.CalcLatency(packetAttrs)
 		}
 	}
-}
-
-func setRlimit() error {
-	return unix.Setrlimit(unix.RLIMIT_MEMLOCK, &unix.Rlimit{
-		Cur: 1024 * 1024 * 10,
-		Max: 1024 * 1024 * 10,
-	})
 }
