@@ -6,7 +6,7 @@ import (
 	"hash/fnv"
 	"net/netip"
 
-	"github.com/pouriyajamshidi/flat/internal/nixtime"
+	"github.com/pouriyajamshidi/flat/internal/flowtable"
 )
 
 /*
@@ -94,50 +94,36 @@ var ipProtoNums = map[uint8]string{
 	17: "UDP",
 }
 
-func PruneFlowTable(table map[uint64]uint64) {
-	now := nixtime.GetNanosecSinceBoot()
-
-	for hash, timestamp := range table {
-		if (now-timestamp)/1000000 > 10000 {
-			fmt.Printf("Removing stale entry from flowtable: %v", hash)
-			delete(table, hash)
-		}
-	}
-}
-
-var flowTable = make(map[uint64]uint64)
-
-func CalcLatency(pkt Packet) {
+func CalcLatency(pkt Packet, table *flowtable.FlowTable) {
 	pktHash := pkt.Hash()
 
-	ts, ok := flowTable[pktHash]
+	ts, ok := table.Get(pktHash)
 
 	if !ok && pkt.Syn {
-		flowTable[pktHash] = pkt.TimeStamp
+		table.Insert(pktHash, pkt.TimeStamp)
 		return
 	} else if !ok && pkt.Protocol == 17 {
-		flowTable[pktHash] = pkt.TimeStamp
+		table.Insert(pktHash, pkt.TimeStamp)
 		return
 	}
 
-	proto, _ := ipProtoNums[pkt.Protocol]
+	proto := ipProtoNums[pkt.Protocol]
 
 	convertIPToString := func(address netip.Addr) string {
 		return address.Unmap().String()
 	}
 
 	if (ok && pkt.Ack) || (ok && proto == "UDP") {
-		fmt.Printf("(%v) Flow latency from %v:%v to %v:%v -> %.3f ms\n",
+		fmt.Printf("(%v) Flow latency from %v:%v to %v:%v -> %.3f ms | %v\n",
 			proto,
 			convertIPToString(pkt.DstIP),
 			pkt.DstPort,
 			convertIPToString(pkt.SrcIP),
 			pkt.SrcPort,
 			(float64(pkt.TimeStamp)-float64(ts))/1000000,
+			pktHash,
 		)
 
-		delete(flowTable, pktHash)
+		table.Remove(pktHash)
 	}
-
-	PruneFlowTable(flowTable)
 }

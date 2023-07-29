@@ -8,6 +8,7 @@ import (
 
 	"github.com/cilium/ebpf/perf"
 	"github.com/pouriyajamshidi/flat/clsact"
+	"github.com/pouriyajamshidi/flat/internal/flowtable"
 	"github.com/pouriyajamshidi/flat/internal/packet"
 	"github.com/vishvananda/netlink"
 	"golang.org/x/sys/unix"
@@ -208,9 +209,18 @@ func Run(ctx context.Context, iface netlink.Link) error {
 		}
 	}()
 
+	flowtable := flowtable.NewFlowTable()
+
+	go func() {
+		for range flowtable.Ticker.C {
+			flowtable.Prune()
+		}
+	}()
+
 	for {
 		select {
 		case <-ctx.Done():
+			flowtable.Ticker.Stop()
 			return probe.Close()
 
 		case pkt := <-c:
@@ -219,7 +229,7 @@ func Run(ctx context.Context, iface netlink.Link) error {
 				log.Printf("Could not unmarshall packet: %+v", pkt)
 				continue
 			}
-			packet.CalcLatency(packetAttrs)
+			packet.CalcLatency(packetAttrs, flowtable)
 		}
 	}
 }
