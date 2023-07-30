@@ -114,14 +114,13 @@ func CalcLatency(pkt Packet, table *flowtable.FlowTable) {
 	}
 
 	if (ok && pkt.Ack) || (ok && proto == "UDP") {
-		fmt.Printf("(%v) Flow latency from %v:%v to %v:%v -> %.3f ms | %v\n",
+		fmt.Printf("(%v) Flow latency from %v:%v to %v:%v -> %.3f ms\n",
 			proto,
 			convertIPToString(pkt.DstIP),
 			pkt.DstPort,
 			convertIPToString(pkt.SrcIP),
 			pkt.SrcPort,
 			(float64(pkt.TimeStamp)-float64(ts))/1000000,
-			pktHash,
 		)
 
 		table.Remove(pktHash)

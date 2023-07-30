@@ -1,4 +1,4 @@
-package nixtime
+package timer
 
 // #cgo CFLAGS: -g -Wall
 /*

@@ -5,7 +5,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/pouriyajamshidi/flat/internal/nixtime"
+	"github.com/pouriyajamshidi/flat/internal/timer"
 )
 
 type FlowTable struct {
@@ -47,11 +47,11 @@ func (table *FlowTable) Remove(hash uint64) {
 
 // Prune clears the stale entries (older than 10 seconds) from the FlowTable
 func (table *FlowTable) Prune() {
-	now := nixtime.GetNanosecSinceBoot()
+	now := timer.GetNanosecSinceBoot()
 
 	table.Range(func(hash, timestamp interface{}) bool {
 		if (now-timestamp.(uint64))/1000000 > 10000 {
-			log.Printf("Pruning stale entry from flow table: %+v", hash)
+			log.Printf("Pruning stale entry from flow table: %v", hash)
 
 			table.Delete(hash)
 
