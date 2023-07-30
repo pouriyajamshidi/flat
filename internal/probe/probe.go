@@ -149,19 +149,20 @@ func newProbe(iface netlink.Link) (*probe, error) {
 }
 
 func (p *probe) Close() error {
-	log.Println("Removing qdisc")
-
-	if err := p.handle.QdiscDel(p.qdisc); err != nil {
-		log.Println("Failed deleting qdisc")
-		return err
-	}
-
 	log.Println("Removing qdisc filters")
+
 	for _, filter := range p.filters {
 		if err := p.handle.FilterDel(filter); err != nil {
 			log.Println("Failed deleting qdisc filters")
 			return err
 		}
+	}
+
+	log.Println("Removing qdisc")
+
+	if err := p.handle.QdiscDel(p.qdisc); err != nil {
+		log.Println("Failed deleting qdisc")
+		return err
 	}
 
 	log.Println("Closing eBPF object")
