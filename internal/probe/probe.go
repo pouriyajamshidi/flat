@@ -2,9 +2,7 @@ package probe
 
 import (
 	"context"
-	"fmt"
 	"log"
-	"os"
 
 	"github.com/cilium/ebpf/perf"
 	"github.com/pouriyajamshidi/flat/clsact"
@@ -57,7 +55,9 @@ func (p *probe) createQdisc() error {
 	})
 
 	if err := p.handle.QdiscAdd(p.qdisc); err != nil {
-		return err
+		if err := p.handle.QdiscReplace(p.qdisc); err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -103,8 +103,10 @@ func (p *probe) createFilters() error {
 	})
 
 	for _, filter := range p.filters {
-		if err := p.handle.FilterReplace(filter); err != nil {
-			return err
+		if err := p.handle.FilterAdd(filter); err != nil {
+			if err := p.handle.FilterReplace(filter); err != nil {
+				return err
+			}
 		}
 	}
 
@@ -122,7 +124,7 @@ func newProbe(iface netlink.Link) (*probe, error) {
 
 	if err != nil {
 		log.Fatalf("Failed getting netlink handle: %v", err)
-		os.Exit(1)
+		return nil, err
 	}
 
 	prbe := probe{
@@ -149,30 +151,29 @@ func newProbe(iface netlink.Link) (*probe, error) {
 }
 
 func (p *probe) Close() error {
-	log.Println("Removing qdisc filters")
-
-	for _, filter := range p.filters {
-		if err := p.handle.FilterDel(filter); err != nil {
-			log.Println("Failed deleting qdisc filters")
-			return err
-		}
-	}
-
 	log.Println("Removing qdisc")
-
 	if err := p.handle.QdiscDel(p.qdisc); err != nil {
 		log.Println("Failed deleting qdisc")
 		return err
 	}
+
+	// log.Println("Removing qdisc filters")
+
+	// for _, filter := range p.filters {
+	// 	if err := p.handle.FilterDel(filter); err != nil {
+	// 		log.Println("Failed deleting qdisc filters")
+	// 		return err
+	// 	}
+	// }
+
+	log.Println("Deleting handle")
+	p.handle.Delete()
 
 	log.Println("Closing eBPF object")
 	if err := p.bpfObjects.Close(); err != nil {
 		log.Println("Failed closing eBPF object")
 		return err
 	}
-
-	log.Println("Deleting handle")
-	p.handle.Delete()
 
 	return nil
 }
@@ -195,15 +196,13 @@ func Run(ctx context.Context, iface netlink.Link) error {
 		return err
 	}
 
-	defer reader.Close()
-
 	c := make(chan []byte)
 
 	go func() {
 		for {
 			event, err := reader.Read()
 			if err != nil {
-				fmt.Println(err)
+				log.Printf("Failed reading perf event: %v", err)
 				return
 			}
 			c <- event.RawSample
@@ -221,6 +220,7 @@ func Run(ctx context.Context, iface netlink.Link) error {
 	for {
 		select {
 		case <-ctx.Done():
+			// reader.Close()
 			flowtable.Ticker.Stop()
 			return probe.Close()
 
