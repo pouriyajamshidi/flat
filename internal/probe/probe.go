@@ -14,6 +14,8 @@ import (
 
 //go:generate go run github.com/cilium/ebpf/cmd/bpf2go probe ../../bpf/flat.c - -O3  -Wall -Werror -Wno-address-of-packed-member
 
+const tenMegaBytes = 1024 * 1024 * 10 // 10MB
+
 type probe struct {
 	iface      netlink.Link
 	handle     *netlink.Handle
@@ -23,11 +25,11 @@ type probe struct {
 }
 
 func setRlimit() error {
-	log.Println("Setting Rlimit")
+	log.Println("Setting rlimit")
 
 	return unix.Setrlimit(unix.RLIMIT_MEMLOCK, &unix.Rlimit{
-		Cur: 1024 * 1024 * 10,
-		Max: 1024 * 1024 * 10,
+		Cur: tenMegaBytes,
+		Max: tenMegaBytes,
 	})
 }
 
@@ -117,13 +119,14 @@ func newProbe(iface netlink.Link) (*probe, error) {
 	log.Println("Creating a new probe")
 
 	if err := setRlimit(); err != nil {
+		log.Printf("Failed setting rlimit: %v", err)
 		return nil, err
 	}
 
 	handle, err := netlink.NewHandle(unix.NETLINK_ROUTE)
 
 	if err != nil {
-		log.Fatalf("Failed getting netlink handle: %v", err)
+		log.Printf("Failed getting netlink handle: %v", err)
 		return nil, err
 	}
 
