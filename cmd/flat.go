@@ -38,6 +38,7 @@ func displayInterfaces() {
 	for i, iface := range interfaces {
 		fmt.Printf("%d) %s\n", i, iface.Name)
 	}
+	os.Exit(1)
 }
 
 func main() {
@@ -48,10 +49,7 @@ func main() {
 
 	if err != nil {
 		log.Printf("Could not find interface %v: %v", *ifaceFlag, err)
-
 		displayInterfaces()
-
-		os.Exit(1)
 	}
 
 	ctx := context.Background()
@@ -61,6 +59,5 @@ func main() {
 
 	if err := probe.Run(ctx, iface); err != nil {
 		log.Fatalf("Failed running the probe: %v", err)
-		os.Exit(1)
 	}
 }
