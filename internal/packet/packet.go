@@ -4,6 +4,7 @@ import (
 	"encoding/binary"
 	"fmt"
 	"hash/fnv"
+	"log"
 	"net/netip"
 
 	"github.com/pouriyajamshidi/flat/internal/flowtable"
@@ -22,6 +23,11 @@ After To4: net.IP{0xc0, 0xa8, 0x1, 0x1}
 
 */
 
+const (
+	udp = "UDP"
+	tcp = "TCP"
+)
+
 type Packet struct {
 	SrcIP     netip.Addr
 	DstIP     netip.Addr
@@ -30,6 +36,7 @@ type Packet struct {
 	Protocol  uint8
 	Syn       bool
 	Ack       bool
+	Ttl       uint8
 	TimeStamp uint64
 }
 
@@ -75,7 +82,7 @@ func UnmarshalBinary(in []byte) (Packet, bool) {
 	dstPort := binary.BigEndian.Uint16(in[34:36])
 
 	// Offset of 2 bytes as packet_t struct is 64-bit aligned.
-	timeStamp := binary.LittleEndian.Uint64(in[40:48])
+	timeStamp := binary.LittleEndian.Uint64(in[41:49])
 
 	return Packet{
 		SrcIP:     srcIP,
@@ -85,6 +92,7 @@ func UnmarshalBinary(in []byte) (Packet, bool) {
 		Protocol:  in[36],
 		Syn:       in[37] == 1,
 		Ack:       in[38] == 1,
+		Ttl:       in[39],
 		TimeStamp: timeStamp,
 	}, true
 }
@@ -95,6 +103,13 @@ var ipProtoNums = map[uint8]string{
 }
 
 func CalcLatency(pkt Packet, table *flowtable.FlowTable) {
+	proto, ok := ipProtoNums[pkt.Protocol]
+
+	if !ok {
+		log.Print("Failed fetching protocol number")
+		return
+	}
+
 	pktHash := pkt.Hash()
 
 	ts, ok := table.Get(pktHash)
@@ -102,24 +117,24 @@ func CalcLatency(pkt Packet, table *flowtable.FlowTable) {
 	if !ok && pkt.Syn {
 		table.Insert(pktHash, pkt.TimeStamp)
 		return
-	} else if !ok && pkt.Protocol == 17 {
+	} else if !ok && proto == udp {
 		table.Insert(pktHash, pkt.TimeStamp)
 		return
 	}
-
-	proto := ipProtoNums[pkt.Protocol]
 
 	convertIPToString := func(address netip.Addr) string {
 		return address.Unmap().String()
 	}
 
-	if (ok && pkt.Ack) || (ok && proto == "UDP") {
-		fmt.Printf("(%v) Flow latency from %v:%v to %v:%v -> %.3f ms\n",
+	if (ok && pkt.Ack) || (ok && proto == udp) {
+		// fmt.Printf("(%v) Flow | src: %v:%v dst: %v:%v TTL: %v \tlatency: %.3f ms\n", // nice format
+		fmt.Printf("(%v) Flow | src: %v:%v | dst: %v:%v | TTL: %v |\tlatency: %.3f ms\n",
 			proto,
 			convertIPToString(pkt.DstIP),
 			pkt.DstPort,
 			convertIPToString(pkt.SrcIP),
 			pkt.SrcPort,
+			pkt.Ttl,
 			(float64(pkt.TimeStamp)-float64(ts))/1000000,
 		)
 
