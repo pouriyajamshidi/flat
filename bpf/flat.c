@@ -30,6 +30,7 @@ struct packet_t {
     __u8 protocol;
     bool syn;
     bool ack;
+    __u8 ttl;
     uint64_t ts;
 };
 
@@ -61,6 +62,7 @@ static inline int handle_ip_packet(uint8_t* head, uint8_t* tail, uint32_t* offse
         pkt->dst_ip.in6_u.u6_addr16[5] = 0xffff;
 
         pkt->protocol = ip->protocol;
+        pkt->ttl = ip->ttl;
 
         return 1; // We have a TCP or UDP packet!
 
@@ -81,6 +83,7 @@ static inline int handle_ip_packet(uint8_t* head, uint8_t* tail, uint32_t* offse
         pkt->dst_ip = ipv6->daddr;
 
         pkt->protocol = ipv6->nexthdr;
+        pkt->ttl = ipv6->hop_limit;
 
         return 1; // We have a TCP or UDP packet!
 
