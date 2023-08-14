@@ -34,9 +34,9 @@ type Packet struct {
 	SrcPort   uint16
 	DstPort   uint16
 	Protocol  uint8
+	Ttl       uint8
 	Syn       bool
 	Ack       bool
-	Ttl       uint8
 	TimeStamp uint64
 }
 
@@ -78,21 +78,19 @@ func UnmarshalBinary(in []byte) (Packet, bool) {
 		return Packet{}, ok
 	}
 
-	srcPort := binary.BigEndian.Uint16(in[32:34])
-	dstPort := binary.BigEndian.Uint16(in[34:36])
-
 	// Offset of 2 bytes as packet_t struct is 64-bit aligned.
 	timeStamp := binary.LittleEndian.Uint64(in[41:49])
+	// timeStamp := binary.LittleEndian.Uint64(in[40:48])
 
 	return Packet{
 		SrcIP:     srcIP,
-		SrcPort:   uint16(srcPort),
+		SrcPort:   binary.BigEndian.Uint16(in[32:34]),
 		DstIP:     dstIP,
-		DstPort:   uint16(dstPort),
+		DstPort:   binary.BigEndian.Uint16(in[34:36]),
 		Protocol:  in[36],
-		Syn:       in[37] == 1,
-		Ack:       in[38] == 1,
-		Ttl:       in[39],
+		Ttl:       in[37],
+		Syn:       in[38] == 1,
+		Ack:       in[39] == 1,
 		TimeStamp: timeStamp,
 	}, true
 }
@@ -127,8 +125,8 @@ func CalcLatency(pkt Packet, table *flowtable.FlowTable) {
 	}
 
 	if (ok && pkt.Ack) || (ok && proto == udp) {
-		// fmt.Printf("(%v) Flow | src: %v:%v dst: %v:%v TTL: %v \tlatency: %.3f ms\n", // nice format
-		fmt.Printf("(%v) Flow | src: %v:%v | dst: %v:%v | TTL: %v |\tlatency: %.3f ms\n",
+		fmt.Printf("(%v) Flow | src: %v:%v dst: %v:%v TTL: %v \tlatency: %.3f ms\n", // nice format
+			// fmt.Printf("(%v) Flow | src: %v:%v | dst: %v:%v | TTL: %v |\tlatency: %.3f ms\n",
 			proto,
 			convertIPToString(pkt.DstIP),
 			pkt.DstPort,

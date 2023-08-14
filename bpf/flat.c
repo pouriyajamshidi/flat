@@ -28,9 +28,9 @@ struct packet_t {
     __be16 src_port;
     __be16 dst_port;
     __u8 protocol;
+    __u8 ttl;
     bool syn;
     bool ack;
-    __u8 ttl;
     uint64_t ts;
 };
 
