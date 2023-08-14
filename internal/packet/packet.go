@@ -78,10 +78,6 @@ func UnmarshalBinary(in []byte) (Packet, bool) {
 		return Packet{}, ok
 	}
 
-	// Offset of 2 bytes as packet_t struct is 64-bit aligned.
-	timeStamp := binary.LittleEndian.Uint64(in[41:49])
-	// timeStamp := binary.LittleEndian.Uint64(in[40:48])
-
 	return Packet{
 		SrcIP:     srcIP,
 		SrcPort:   binary.BigEndian.Uint16(in[32:34]),
@@ -91,7 +87,7 @@ func UnmarshalBinary(in []byte) (Packet, bool) {
 		Ttl:       in[37],
 		Syn:       in[38] == 1,
 		Ack:       in[39] == 1,
-		TimeStamp: timeStamp,
+		TimeStamp: binary.LittleEndian.Uint64(in[40:48]),
 	}, true
 }
 
