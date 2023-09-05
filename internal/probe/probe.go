@@ -12,7 +12,7 @@ import (
 	"golang.org/x/sys/unix"
 )
 
-//go:generate go run github.com/cilium/ebpf/cmd/bpf2go probe ../../bpf/flat.c - -O3  -Wall -Werror -Wno-address-of-packed-member
+//go:generate go run github.com/cilium/ebpf/cmd/bpf2go probe ../../bpf/flat.c - -O2  -Wall -Werror -Wno-address-of-packed-member
 
 const tenMegaBytes = 1024 * 1024 * 10 // 10MB
 
