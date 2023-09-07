@@ -34,8 +34,8 @@ struct packet_t {
     uint64_t ts;
 };
 
-static inline int handle_ip_packet(uint8_t* head, uint8_t* tail, uint32_t* offset, struct packet_t* pkt) {
-    struct ethhdr* eth = (void*)head;
+static inline int handle_ip_packet(void* head, void* tail, uint32_t* offset, struct packet_t* pkt) {
+    struct ethhdr* eth = head;
     struct iphdr* ip;
     struct ipv6hdr* ipv6;
 
@@ -92,7 +92,7 @@ static inline int handle_ip_packet(uint8_t* head, uint8_t* tail, uint32_t* offse
     }
 }
 
-static inline int handle_ip_segment(uint8_t* head, uint8_t* tail, uint32_t* offset, struct packet_t* pkt) {
+static inline int handle_ip_segment(void* head, void* tail, uint32_t* offset, struct packet_t* pkt) {
     struct tcphdr* tcp;
     struct udphdr* udp;
 
@@ -135,8 +135,8 @@ int flat(struct __sk_buff* skb) {
         return TC_ACT_OK;
     }
 
-    uint8_t* head = (uint8_t*)(long)skb->data;     // Start of the packet data
-    uint8_t* tail = (uint8_t*)(long)skb->data_end; // End of the packet data
+    void* head = (void*)(long)skb->data;     // Start of the packet data
+    void* tail = (void*)(long)skb->data_end; // End of the packet data
 
     if (head + sizeof(struct ethhdr) > tail) { // Not an Ethernet frame
         return TC_ACT_OK;
