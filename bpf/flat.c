@@ -47,7 +47,7 @@ static inline int handle_ip_packet(void* head, void* tail, uint32_t* offset, str
             return TC_ACT_OK;
         }
 
-        ip = (void*)head + sizeof(struct ethhdr);
+        ip = head + sizeof(struct ethhdr);
 
         if (ip->protocol != IPPROTO_TCP && ip->protocol != IPPROTO_UDP) {
             return TC_ACT_OK;
@@ -73,7 +73,7 @@ static inline int handle_ip_packet(void* head, void* tail, uint32_t* offset, str
             return TC_ACT_OK;
         }
 
-        ipv6 = (void*)head + sizeof(struct ethhdr);
+        ipv6 = head + sizeof(struct ethhdr);
 
         if (ipv6->nexthdr != IPPROTO_TCP && ipv6->nexthdr != IPPROTO_UDP) {
             return TC_ACT_OK;
@@ -98,7 +98,7 @@ static inline int handle_ip_segment(void* head, void* tail, uint32_t* offset, st
 
     switch (pkt->protocol) {
     case IPPROTO_TCP:
-        tcp = (void*)head + *offset;
+        tcp = head + *offset;
 
         if (tcp->syn) { // We have SYN or SYN/ACK
             pkt->src_port = tcp->source;
@@ -110,7 +110,7 @@ static inline int handle_ip_segment(void* head, void* tail, uint32_t* offset, st
             return 1;
         }
     case IPPROTO_UDP:
-        udp = (void*)head + *offset;
+        udp = head + *offset;
 
         pkt->src_port = udp->source;
         pkt->dst_port = udp->dest;
