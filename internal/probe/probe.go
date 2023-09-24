@@ -181,7 +181,8 @@ func (p *probe) Close() error {
 	return nil
 }
 
-// Run starts the program
+// Run attaches the probe, reads from the eBPF map
+// as well as calculating and displaying the flow latencies
 func Run(ctx context.Context, iface netlink.Link) error {
 	log.Println("Starting up the probe")
 
