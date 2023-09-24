@@ -2,30 +2,22 @@ package packet
 
 import (
 	"encoding/binary"
-	"fmt"
 	"hash/fnv"
 	"log"
 	"net/netip"
 
+	"github.com/gookit/color"
 	"github.com/pouriyajamshidi/flat/internal/flowtable"
 )
-
-/*
-
-Remember that net.IP is just a []byte
-
-The To4() converts it to the 4-byte representation
-
-Example for net.Parse(192.168.1.1):
-
-Original:  net.IP{0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0xff, 0xff, 0xc0, 0xa8, 0x1, 0x1}
-After To4: net.IP{0xc0, 0xa8, 0x1, 0x1}
-
-*/
 
 const (
 	udp = "UDP"
 	tcp = "TCP"
+)
+
+var (
+	colorLightYellow = color.LightYellow.Printf
+	colorCyan        = color.Cyan.Printf
 )
 
 // Packet represents a TCP or UDP packet
@@ -104,7 +96,7 @@ func CalcLatency(pkt Packet, table *flowtable.FlowTable) {
 	proto, ok := ipProtoNums[pkt.Protocol]
 
 	if !ok {
-		log.Print("Failed fetching protocol number")
+		log.Print("Failed fetching protocol number: ", pkt.Protocol)
 		return
 	}
 
@@ -118,15 +110,16 @@ func CalcLatency(pkt Packet, table *flowtable.FlowTable) {
 	} else if !ok && proto == udp {
 		table.Insert(pktHash, pkt.TimeStamp)
 		return
+	} else if !ok {
+		return
 	}
 
 	convertIPToString := func(address netip.Addr) string {
 		return address.Unmap().String()
 	}
 
-	if (ok && pkt.Ack) || (ok && proto == udp) {
-		fmt.Printf("(%v) Flow | src: %v:%v dst: %v:%v TTL: %v \tlatency: %.3f ms\n", // nice format
-			// fmt.Printf("(%v) Flow | src: %v:%v | dst: %v:%v | TTL: %v |\tlatency: %.3f ms\n",
+	if pkt.Ack {
+		colorCyan("(%v) | src: %v:%-7v\tdst: %v:%-7v\tTTL: %-4v\tlatency: %.3f ms\n",
 			proto,
 			convertIPToString(pkt.DstIP),
 			pkt.DstPort,
@@ -135,7 +128,17 @@ func CalcLatency(pkt Packet, table *flowtable.FlowTable) {
 			pkt.TTL,
 			(float64(pkt.TimeStamp)-float64(ts))/1000000,
 		)
-
+		table.Remove(pktHash)
+	} else if proto == udp {
+		colorLightYellow("(%v) | src: %v:%-7v\tdst: %v:%-7v\tTTL: %-4v\tlatency: %.3f ms\n",
+			proto,
+			convertIPToString(pkt.DstIP),
+			pkt.DstPort,
+			convertIPToString(pkt.SrcIP),
+			pkt.SrcPort,
+			pkt.TTL,
+			(float64(pkt.TimeStamp)-float64(ts))/1000000,
+		)
 		table.Remove(pktHash)
 	}
 }
