@@ -42,7 +42,7 @@ func displayInterfaces() {
 }
 
 func main() {
-	ifaceFlag := flag.String("interface", "wlp3s0", "interface to attach the probe to") // TODO: change default value to eth0
+	ifaceFlag := flag.String("i", "eth0", "interface to attach the probe to")
 	flag.Parse()
 
 	iface, err := netlink.LinkByName(*ifaceFlag)
