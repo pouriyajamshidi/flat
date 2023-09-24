@@ -8,6 +8,7 @@ import (
 	"github.com/google/gopacket/layers"
 )
 
+// EthernetHeader creates an arbitrary Ethernet header
 func EthernetHeader(proto layers.EthernetType) []byte {
 	buf := gopacket.NewSerializeBuffer()
 
@@ -24,6 +25,7 @@ func EthernetHeader(proto layers.EthernetType) []byte {
 	return buf.Bytes()[0:14] // Override the gopacket padding. If not done like this, it will pad it to make a 60 byte ethernet frame
 }
 
+// IPv4Header creates an arbitrary IPv4 header
 func IPv4Header(proto layers.IPProtocol) []byte {
 	buf := gopacket.NewSerializeBuffer()
 
@@ -40,6 +42,7 @@ func IPv4Header(proto layers.IPProtocol) []byte {
 	return buf.Bytes()
 }
 
+// TCPv4SYN creates an arbitrary TCP SYN header
 func TCPv4SYN() []byte {
 	var packet []byte
 	packet = append(packet, EthernetHeader(layers.EthernetTypeIPv4)...)
@@ -62,6 +65,7 @@ func TCPv4SYN() []byte {
 	return append(packet, buf.Bytes()...)
 }
 
+// TCPv4ACK creates an arbitrary TCP ACK header
 func TCPv4ACK() []byte {
 	var packet []byte
 	packet = append(packet, EthernetHeader(layers.EthernetTypeIPv4)...)
@@ -84,6 +88,7 @@ func TCPv4ACK() []byte {
 	return append(packet, buf.Bytes()...)
 }
 
+// TCPv4SYNACK creates an arbitrary TCP SYN/ACK header
 func TCPv4SYNACK() []byte {
 	var packet []byte
 	packet = append(packet, EthernetHeader(layers.EthernetTypeIPv4)...)

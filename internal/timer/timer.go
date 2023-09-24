@@ -13,6 +13,7 @@ static unsigned long long get_nsecs(void) {
 */
 import "C"
 
+// GetNanosecSinceBoot returns the nanoseconds since system boot time
 func GetNanosecSinceBoot() uint64 {
 	return uint64(C.get_nsecs())
 }

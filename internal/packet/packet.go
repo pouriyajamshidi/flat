@@ -28,13 +28,14 @@ const (
 	tcp = "TCP"
 )
 
+// Packet represents a TCP or UDP packet
 type Packet struct {
 	SrcIP     netip.Addr
 	DstIP     netip.Addr
 	SrcPort   uint16
 	DstPort   uint16
 	Protocol  uint8
-	Ttl       uint8
+	TTL       uint8
 	Syn       bool
 	Ack       bool
 	TimeStamp uint64
@@ -46,6 +47,7 @@ func hash(value []byte) uint64 {
 	return hash.Sum64()
 }
 
+// Hash hashes the packets based on their 5-tuple hash
 func (pkt *Packet) Hash() uint64 {
 	tmp := make([]byte, 2)
 
@@ -65,6 +67,7 @@ func (pkt *Packet) Hash() uint64 {
 	return hash(src) + hash(dst) + hash(proto)
 }
 
+// UnmarshalBinary builds and fills up the Packet struct coming from eBPF map
 func UnmarshalBinary(in []byte) (Packet, bool) {
 	srcIP, ok := netip.AddrFromSlice(in[0:16])
 
@@ -84,7 +87,7 @@ func UnmarshalBinary(in []byte) (Packet, bool) {
 		DstIP:     dstIP,
 		DstPort:   binary.BigEndian.Uint16(in[34:36]),
 		Protocol:  in[36],
-		Ttl:       in[37],
+		TTL:       in[37],
 		Syn:       in[38] == 1,
 		Ack:       in[39] == 1,
 		TimeStamp: binary.LittleEndian.Uint64(in[40:48]),
@@ -96,6 +99,7 @@ var ipProtoNums = map[uint8]string{
 	17: "UDP",
 }
 
+// CalcLatency calculates and displays flow latencies
 func CalcLatency(pkt Packet, table *flowtable.FlowTable) {
 	proto, ok := ipProtoNums[pkt.Protocol]
 
@@ -128,7 +132,7 @@ func CalcLatency(pkt Packet, table *flowtable.FlowTable) {
 			pkt.DstPort,
 			convertIPToString(pkt.SrcIP),
 			pkt.SrcPort,
-			pkt.Ttl,
+			pkt.TTL,
 			(float64(pkt.TimeStamp)-float64(ts))/1000000,
 		)
 

@@ -8,6 +8,7 @@ import (
 	"github.com/pouriyajamshidi/flat/internal/timer"
 )
 
+// FlowTable stores all TCP and UDP flows
 type FlowTable struct {
 	Ticker *time.Ticker
 	sync.Map
@@ -18,12 +19,12 @@ func NewFlowTable() *FlowTable {
 	return &FlowTable{Ticker: time.NewTicker(time.Second * 10)}
 }
 
-// add adds packet hash and its timestamp to the FlowTable
+// Insert adds packet hash and its timestamp to the FlowTable
 func (table *FlowTable) Insert(hash, timestamp uint64) {
 	table.Store(hash, timestamp)
 }
 
-// load loads packet hash and its timestamp from the FlowTable
+// Get loads packet hash and its timestamp from the FlowTable
 func (table *FlowTable) Get(hash uint64) (uint64, bool) {
 	value, ok := table.Load(hash)
 
@@ -33,7 +34,7 @@ func (table *FlowTable) Get(hash uint64) (uint64, bool) {
 	return value.(uint64), true
 }
 
-// delete deletes packet hash and its timestamp from the FlowTable
+// Remove deletes packet hash and its timestamp from the FlowTable
 func (table *FlowTable) Remove(hash uint64) {
 	_, found := table.Load(hash)
 

@@ -181,6 +181,7 @@ func (p *probe) Close() error {
 	return nil
 }
 
+// Run starts the program
 func Run(ctx context.Context, iface netlink.Link) error {
 	log.Println("Starting up the probe")
 
