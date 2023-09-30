@@ -6,4 +6,4 @@ Set Height 800
 Type "sudo ./flat" 
 Sleep 500ms  Enter
 Sleep 15s Ctrl+C
-Sleep 3s
+Sleep 5s
