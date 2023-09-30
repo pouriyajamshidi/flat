@@ -14,7 +14,8 @@ import (
 
 //go:generate go run github.com/cilium/ebpf/cmd/bpf2go probe ../../bpf/flat.c - -O2  -Wall -Werror -Wno-address-of-packed-member
 
-const tenMegaBytes = 1024 * 1024 * 10 // 10MB
+const tenMegaBytes = 1024 * 1024 * 10
+const twentyMegaBytes = tenMegaBytes * 2
 
 type probe struct {
 	iface      netlink.Link
@@ -29,7 +30,7 @@ func setRlimit() error {
 
 	return unix.Setrlimit(unix.RLIMIT_MEMLOCK, &unix.Rlimit{
 		Cur: tenMegaBytes,
-		Max: tenMegaBytes,
+		Max: twentyMegaBytes,
 	})
 }
 
