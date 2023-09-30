@@ -10,11 +10,6 @@ import (
 	"github.com/pouriyajamshidi/flat/internal/flowtable"
 )
 
-const (
-	udp = "UDP"
-	tcp = "TCP"
-)
-
 var (
 	colorLightYellow = color.LightYellow.Printf
 	colorCyan        = color.Cyan.Printf
@@ -107,7 +102,7 @@ func CalcLatency(pkt Packet, table *flowtable.FlowTable) {
 	if !ok && pkt.Syn {
 		table.Insert(pktHash, pkt.TimeStamp)
 		return
-	} else if !ok && proto == udp {
+	} else if !ok && proto == "UDP" {
 		table.Insert(pktHash, pkt.TimeStamp)
 		return
 	} else if !ok {
@@ -129,7 +124,7 @@ func CalcLatency(pkt Packet, table *flowtable.FlowTable) {
 			(float64(pkt.TimeStamp)-float64(ts))/1000000,
 		)
 		table.Remove(pktHash)
-	} else if proto == udp {
+	} else if proto == "UDP" {
 		colorLightYellow("(%v) | src: %v:%-7v\tdst: %v:%-7v\tTTL: %-4v\tlatency: %.3f ms\n",
 			proto,
 			convertIPToString(pkt.DstIP),
