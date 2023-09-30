@@ -119,11 +119,6 @@ func (p *probe) createFilters() error {
 func newProbe(iface netlink.Link) (*probe, error) {
 	log.Println("Creating a new probe")
 
-	if err := setRlimit(); err != nil {
-		log.Printf("Failed setting rlimit: %v", err)
-		return nil, err
-	}
-
 	handle, err := netlink.NewHandle(unix.NETLINK_ROUTE)
 
 	if err != nil {
@@ -186,6 +181,11 @@ func (p *probe) Close() error {
 // as well as calculating and displaying the flow latencies
 func Run(ctx context.Context, iface netlink.Link) error {
 	log.Println("Starting up the probe")
+
+	if err := setRlimit(); err != nil {
+		log.Printf("Failed setting rlimit: %v", err)
+		return err
+	}
 
 	probe, err := newProbe(iface)
 
