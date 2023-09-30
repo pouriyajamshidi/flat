@@ -125,7 +125,7 @@ func CalcLatency(pkt Packet, table *flowtable.FlowTable) {
 		)
 		table.Remove(pktHash)
 	} else if proto == "UDP" {
-		colorLightYellow("(%v) | src: %v:%-7v\tdst: %v:%-7v\tTTL: %-4v\tlatency: %.3f ms\n",
+		colorLightYellow("(%v) | src: %v:%-7v\tdst: %v:%-11v\tTTL: %-4v\tlatency: %.3f ms\n",
 			proto,
 			convertIPToString(pkt.DstIP),
 			pkt.DstPort,
