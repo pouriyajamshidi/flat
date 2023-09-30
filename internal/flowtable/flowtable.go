@@ -61,3 +61,13 @@ func (table *FlowTable) Prune() {
 		return false
 	})
 }
+
+// Entries displays the current number of entries in flowtable
+func (table *FlowTable) Entries() int {
+	count := 0
+	table.Range(func(_, _ interface{}) bool {
+		count++
+		return true
+	})
+	return count
+}
