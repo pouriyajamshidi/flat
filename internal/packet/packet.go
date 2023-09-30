@@ -114,7 +114,7 @@ func CalcLatency(pkt Packet, table *flowtable.FlowTable) {
 	}
 
 	if pkt.Ack {
-		colorCyan("(%v) | src: %v:%-7v\tdst: %v:%-7v\tTTL: %-4v\tlatency: %.3f ms\n",
+		colorCyan("(%v) | src: %v:%-7v\tdst: %v:%-11v\tTTL: %-4v\tlatency: %.3f ms\n",
 			proto,
 			convertIPToString(pkt.DstIP),
 			pkt.DstPort,
