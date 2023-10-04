@@ -1,9 +1,9 @@
 Set Shell "bash"
 Set FontSize 20
-Set Width 1350
-Set Height 800
+Set Width 2000
+Set Height 900
 
-Type "sudo ./flat" 
+Type "sudo ./flat -i wlp3s0" 
 Sleep 500ms  Enter
 Sleep 15s Ctrl+C
-Sleep 3s
+Sleep 5s
