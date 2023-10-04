@@ -187,6 +187,14 @@ func Run(ctx context.Context, iface netlink.Link) error {
 		return err
 	}
 
+	flowtable := flowtable.NewFlowTable()
+
+	go func() {
+		for range flowtable.Ticker.C {
+			flowtable.Prune()
+		}
+	}()
+
 	probe, err := newProbe(iface)
 
 	if err != nil {
@@ -212,14 +220,6 @@ func Run(ctx context.Context, iface netlink.Link) error {
 				return
 			}
 			c <- event.RawSample
-		}
-	}()
-
-	flowtable := flowtable.NewFlowTable()
-
-	go func() {
-		for range flowtable.Ticker.C {
-			flowtable.Prune()
 		}
 	}()
 
