@@ -109,16 +109,12 @@ func CalcLatency(pkt Packet, table *flowtable.FlowTable) {
 		return
 	}
 
-	convertIPToString := func(address netip.Addr) string {
-		return address.Unmap().String()
-	}
-
 	if pkt.Ack {
 		colorCyan("(%v) | src: %v:%-7v\tdst: %v:%-9v\tTTL: %-4v\tlatency: %.3f ms\n",
 			proto,
-			convertIPToString(pkt.DstIP),
+			pkt.DstIP.Unmap().String(),
 			pkt.DstPort,
-			convertIPToString(pkt.SrcIP),
+			pkt.SrcIP.Unmap().String(),
 			pkt.SrcPort,
 			pkt.TTL,
 			(float64(pkt.TimeStamp)-float64(ts))/1000000,
@@ -127,9 +123,9 @@ func CalcLatency(pkt Packet, table *flowtable.FlowTable) {
 	} else if proto == "UDP" {
 		colorLightYellow("(%v) | src: %v:%-7v\tdst: %v:%-9v\tTTL: %-4v\tlatency: %.3f ms\n",
 			proto,
-			convertIPToString(pkt.DstIP),
+			pkt.DstIP.Unmap().String(),
 			pkt.DstPort,
-			convertIPToString(pkt.SrcIP),
+			pkt.SrcIP.Unmap().String(),
 			pkt.SrcPort,
 			pkt.TTL,
 			(float64(pkt.TimeStamp)-float64(ts))/1000000,
