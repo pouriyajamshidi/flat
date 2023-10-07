@@ -117,7 +117,7 @@ func CalcLatency(pkt Packet, table *flowtable.FlowTable) {
 			pkt.SrcIP.Unmap().String(),
 			pkt.SrcPort,
 			pkt.TTL,
-			(float64(pkt.TimeStamp)-float64(ts))/1000000,
+			(float64(pkt.TimeStamp)-float64(ts))/1_000_000,
 		)
 		table.Remove(pktHash)
 	} else if proto == "UDP" {
@@ -128,7 +128,7 @@ func CalcLatency(pkt Packet, table *flowtable.FlowTable) {
 			pkt.SrcIP.Unmap().String(),
 			pkt.SrcPort,
 			pkt.TTL,
-			(float64(pkt.TimeStamp)-float64(ts))/1000000,
+			(float64(pkt.TimeStamp)-float64(ts))/1_000_000,
 		)
 		table.Remove(pktHash)
 	}
