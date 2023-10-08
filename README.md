@@ -1,10 +1,10 @@
 # flat
 
-![flat in action](.images/flat.gif)
-
 Measure **UDP** and **TCP** flow latency for both **IPv4** and **IPv6** using `eBPF`.
 
 This repo is the companion to my blog posts about eBPF at <https://thegraynode.io/tags/flat/>.
+
+![flat in action](.images/flat.gif)
 
 ## Running The Program
 
