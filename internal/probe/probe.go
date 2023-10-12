@@ -4,7 +4,7 @@ import (
 	"context"
 	"log"
 
-	"github.com/cilium/ebpf/perf"
+	"github.com/cilium/ebpf/ringbuf"
 	"github.com/pouriyajamshidi/flat/clsact"
 	"github.com/pouriyajamshidi/flat/internal/flowtable"
 	"github.com/pouriyajamshidi/flat/internal/packet"
@@ -203,12 +203,11 @@ func Run(ctx context.Context, iface netlink.Link) error {
 
 	pipe := probe.bpfObjects.probeMaps.Pipe
 
-	reader, err := perf.NewReader(pipe, 10)
-
+	reader, err := ringbuf.NewReader(pipe)
 	if err != nil {
-		log.Println("Failed creating perf reader")
-		return err
+		log.Fatalf("opening ringbuf reader: %s", err)
 	}
+	defer reader.Close()
 
 	c := make(chan []byte)
 
@@ -226,7 +225,6 @@ func Run(ctx context.Context, iface netlink.Link) error {
 	for {
 		select {
 		case <-ctx.Done():
-			// reader.Close()
 			flowtable.Ticker.Stop()
 			return probe.Close()
 

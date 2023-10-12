@@ -19,7 +19,8 @@
 #include <bpf/bpf_helpers.h>
 
 struct {
-    __uint(type, BPF_MAP_TYPE_PERF_EVENT_ARRAY);
+    __uint(type, BPF_MAP_TYPE_RINGBUF);
+    __uint(max_entries, 512 * 1024); // 512 KB
 } pipe SEC(".maps");
 
 struct packet_t {
@@ -159,7 +160,7 @@ int flat(struct __sk_buff* skb) {
         return TC_ACT_OK;
     }
 
-    if (bpf_perf_event_output(skb, &pipe, BPF_F_CURRENT_CPU, &pkt, sizeof(pkt)) < 0) {
+    if (bpf_ringbuf_output(&pipe, &pkt, sizeof(pkt), 0) < 0) {
         return TC_ACT_OK;
     }
 
