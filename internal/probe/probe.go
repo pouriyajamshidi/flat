@@ -16,6 +16,7 @@ import (
 
 const tenMegaBytes = 1024 * 1024 * 10
 const twentyMegaBytes = tenMegaBytes * 2
+const fortyMegaBytes = twentyMegaBytes * 2
 
 type probe struct {
 	iface      netlink.Link
@@ -26,7 +27,7 @@ type probe struct {
 }
 
 func setRlimit() error {
-	log.Printf("Setting rlimit - soft: %v | hard: %v\n", tenMegaBytes, twentyMegaBytes)
+	log.Printf("Setting rlimit - soft: %v | hard: %v\n", twentyMegaBytes, fortyMegaBytes)
 
 	return unix.Setrlimit(unix.RLIMIT_MEMLOCK, &unix.Rlimit{
 		Cur: tenMegaBytes,
