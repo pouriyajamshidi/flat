@@ -26,7 +26,7 @@ type probe struct {
 }
 
 func setRlimit() error {
-	log.Println("Setting rlimit")
+	log.Printf("Setting rlimit - soft: %v | hard: %v\n", tenMegaBytes, twentyMegaBytes)
 
 	return unix.Setrlimit(unix.RLIMIT_MEMLOCK, &unix.Rlimit{
 		Cur: tenMegaBytes,
@@ -35,7 +35,7 @@ func setRlimit() error {
 }
 
 func (p *probe) loadObjects() error {
-	log.Printf("Loading probe object to kernel")
+	log.Printf("Loading probe object into kernel")
 
 	objs := probeObjects{}
 
@@ -49,7 +49,7 @@ func (p *probe) loadObjects() error {
 }
 
 func (p *probe) createQdisc() error {
-	log.Printf("Creating qdisc")
+	log.Printf("Creating clsact qdisc")
 
 	p.qdisc = clsact.NewClsAct(&netlink.QdiscAttrs{
 		LinkIndex: p.iface.Attrs().Index,
@@ -67,7 +67,7 @@ func (p *probe) createQdisc() error {
 }
 
 func (p *probe) createFilters() error {
-	log.Printf("Creating qdisc filters")
+	log.Printf("Creating qdisc ingress/egress filters")
 
 	addFilter := func(attrs netlink.FilterAttrs) {
 		p.filters = append(p.filters, &netlink.BpfFilter{
@@ -215,7 +215,7 @@ func Run(ctx context.Context, iface netlink.Link) error {
 		for {
 			event, err := reader.Read()
 			if err != nil {
-				log.Printf("Failed reading perf event: %v", err)
+				log.Printf("Failed reading from ringbuf: %v", err)
 				return
 			}
 			c <- event.RawSample
