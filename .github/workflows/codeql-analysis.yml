@@ -61,7 +61,7 @@ jobs:
       #   ./location_of_script_within_repo/buildscript.sh
 
       - name: Run format
-        run: gofmt -w ./...
+        run: gofmt -w .
 
       - name: Run vet
         run: go vet
