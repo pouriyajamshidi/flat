@@ -3,12 +3,12 @@ module github.com/pouriyajamshidi/flat
 go 1.20
 
 require (
-	github.com/cilium/ebpf v0.12.2
+	github.com/cilium/ebpf v0.12.3
 	github.com/google/gopacket v1.1.19
 	github.com/gookit/color v1.5.4
 	github.com/stretchr/testify v1.8.4
 	github.com/vishvananda/netlink v1.1.0
-	golang.org/x/sys v0.14.0
+	golang.org/x/sys v0.14.1-0.20231108175955-e4099bfacb8c
 )
 
 require (
