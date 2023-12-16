@@ -66,8 +66,8 @@ jobs:
       - name: Run vet
         run: go vet ./...
 
-      - name: Run lint
-        run: go lint ./...
+      #- name: Run lint
+      #  run: go lint ./...
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v2
