@@ -143,26 +143,31 @@ int flat(struct __sk_buff* skb) {
         return TC_ACT_OK;
     }
 
-    struct packet_t pkt = { 0 };
+    struct packet_t* pkt;
+    pkt = bpf_ringbuf_reserve(&pipe, sizeof(struct packet_t), 0);
+    if (!pkt) {
+        return TC_ACT_OK;
+    }
 
     uint32_t offset = 0;
 
-    if (handle_ip_packet(head, tail, &offset, &pkt) == TC_ACT_OK) {
+    if (handle_ip_packet(head, tail, &offset, pkt) == TC_ACT_OK) {
+        bpf_ringbuf_discard(pkt, 0);
         return TC_ACT_OK;
     }
 
     // Check if TCP/UDP header is fitting this packet
     if (head + offset + sizeof(struct tcphdr) > tail || head + offset + sizeof(struct udphdr) > tail) {
+        bpf_ringbuf_discard(pkt, 0);
         return TC_ACT_OK;
     }
 
-    if (handle_ip_segment(head, tail, &offset, &pkt) == TC_ACT_OK) {
+    if (handle_ip_segment(head, tail, &offset, pkt) == TC_ACT_OK) {
+        bpf_ringbuf_discard(pkt, 0);
         return TC_ACT_OK;
     }
 
-    if (bpf_ringbuf_output(&pipe, &pkt, sizeof(pkt), 0) < 0) {
-        return TC_ACT_OK;
-    }
+    bpf_ringbuf_submit(pkt, 0);
 
     return TC_ACT_OK;
 }
