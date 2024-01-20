@@ -1,6 +1,6 @@
 module github.com/pouriyajamshidi/flat
 
-go 1.21.4
+go 1.21.6
 
 require (
 	github.com/cilium/ebpf v0.12.3
