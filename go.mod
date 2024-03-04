@@ -6,7 +6,7 @@ require (
 	github.com/cilium/ebpf v0.13.2
 	github.com/google/gopacket v1.1.19
 	github.com/gookit/color v1.5.4
-	github.com/stretchr/testify v1.8.4
+	github.com/stretchr/testify v1.9.0
 	github.com/vishvananda/netlink v1.1.0
 	golang.org/x/sys v0.17.0
 )
