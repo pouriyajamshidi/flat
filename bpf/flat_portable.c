@@ -50,6 +50,10 @@ static inline int handle_ip_packet(void* head, void* tail, uint32_t* offset, str
             return TC_ACT_OK;
         }
 
+        // Clean the structure before using it
+        pkt->src_ip = (struct in6_addr){0};
+        pkt->dst_ip = (struct in6_addr){0};
+
         // Create IPv4-Mapped IPv6 Address
         pkt->src_ip.in6_u.u6_addr32[3] = ip->saddr;
         pkt->dst_ip.in6_u.u6_addr32[3] = ip->daddr;
