@@ -143,7 +143,7 @@ int flat(struct __sk_buff* skb) {
         return TC_ACT_OK;
     }
 
-    struct packet_t* pkt;
+    struct packet_t* pkt = NULL;
     pkt = bpf_ringbuf_reserve(&pipe, sizeof(struct packet_t), 0);
     if (!pkt) {
         return TC_ACT_OK;
