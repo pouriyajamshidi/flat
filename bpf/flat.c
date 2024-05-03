@@ -2,6 +2,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 
+#include <linux/string.h>
 #include <linux/bpf.h>
 #include <linux/bpf_common.h>
 
@@ -148,6 +149,10 @@ int flat(struct __sk_buff* skb) {
     if (!pkt) {
         return TC_ACT_OK;
     }
+
+    // Zero-initialize the memory region of pkt
+    // so that we do not access garbage
+    memset(pkt, 0, sizeof(struct packet_t));
 
     uint32_t offset = 0;
 
