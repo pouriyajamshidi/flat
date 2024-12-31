@@ -1,6 +1,8 @@
 module github.com/pouriyajamshidi/flat
 
-go 1.23.2
+
+go 1.23.4
+
 
 require (
 	github.com/cilium/ebpf v0.17.1
@@ -16,6 +18,6 @@ require (
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/vishvananda/netns v0.0.5 // indirect
 	github.com/xo/terminfo v0.0.0-20220910002029-abceb7e1c41e // indirect
-	golang.org/x/exp v0.0.0-20241009180824-f66d83c29e7c // indirect
+	golang.org/x/exp v0.0.0-20241217172543-b2144cdd0a67 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
