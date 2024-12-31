@@ -8,6 +8,7 @@ import (
 	"github.com/pouriyajamshidi/flat/clsact"
 	"github.com/pouriyajamshidi/flat/internal/flowtable"
 	"github.com/pouriyajamshidi/flat/internal/packet"
+	"github.com/pouriyajamshidi/flat/internal/types"
 	"github.com/vishvananda/netlink"
 	"golang.org/x/sys/unix"
 )
@@ -180,7 +181,7 @@ func (p *probe) Close() error {
 
 // Run attaches the probe, reads from the eBPF map
 // as well as calculating and displaying the flow latencies
-func Run(ctx context.Context, iface netlink.Link) error {
+func Run(ctx context.Context, userInput types.UserInput) error {
 	log.Println("Starting up the probe")
 
 	if err := setRlimit(); err != nil {
@@ -196,7 +197,7 @@ func Run(ctx context.Context, iface netlink.Link) error {
 		}
 	}()
 
-	probe, err := newProbe(iface)
+	probe, err := newProbe(userInput.Interface)
 
 	if err != nil {
 		return err
@@ -235,7 +236,16 @@ func Run(ctx context.Context, iface netlink.Link) error {
 				log.Printf("Could not unmarshall packet: %+v", pkt)
 				continue
 			}
-			packet.CalcLatency(packetAttrs, flowtable)
+			if !userInput.IP.IsValid() && userInput.Port == 0 {
+				packet.CalcLatency(packetAttrs, flowtable)
+				// FIXME:
+				// } else if (userInput.Port == packetAttrs.DstPort || userInput.Port == packetAttrs.SrcPort) && (userInput.IP == packetAttrs.DstIP.Unmap() || userInput.IP == packetAttrs.SrcIP.Unmap()) {
+				// 	packet.CalcLatency(packetAttrs, flowtable)
+			} else if userInput.IP == packetAttrs.DstIP.Unmap() || userInput.IP == packetAttrs.SrcIP.Unmap() {
+				packet.CalcLatency(packetAttrs, flowtable)
+			} else if userInput.Port == packetAttrs.DstPort || userInput.Port == packetAttrs.SrcPort {
+				packet.CalcLatency(packetAttrs, flowtable)
+			}
 		}
 	}
 }
