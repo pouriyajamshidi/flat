@@ -1,8 +1,6 @@
 module github.com/pouriyajamshidi/flat
 
-
 go 1.23.4
-
 
 require (
 	github.com/cilium/ebpf v0.17.1
@@ -10,7 +8,7 @@ require (
 	github.com/gookit/color v1.5.4
 	github.com/stretchr/testify v1.10.0
 	github.com/vishvananda/netlink v1.3.0
-	golang.org/x/sys v0.28.0
+	golang.org/x/sys v0.29.0
 )
 
 require (
