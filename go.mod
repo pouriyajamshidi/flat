@@ -5,7 +5,7 @@ go 1.23.4
 require (
 	github.com/cilium/ebpf v0.19.0
 	github.com/google/gopacket v1.1.19
-	github.com/gookit/color v1.5.4
+	github.com/gookit/color v1.6.0
 	github.com/stretchr/testify v1.11.0
 	github.com/vishvananda/netlink v1.3.1
 	golang.org/x/sys v0.35.0
