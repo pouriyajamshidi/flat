@@ -48,9 +48,8 @@ func getUserInput() types.UserInput {
 	ifaceFlag := flag.String("i", "eth0", "interface to attach the probe to")
 	ipFlag := flag.String("ip", "", "IP address to track (optional)")
 	portFlag := flag.Uint("port", 0, "Port number to track (optional)")
-	flag.Parse()
 
-	var userInput types.UserInput
+	flag.Parse()
 
 	iface, err := netlink.LinkByName(*ifaceFlag)
 
@@ -58,6 +57,8 @@ func getUserInput() types.UserInput {
 		log.Printf("Could not find interface %v: %v", *ifaceFlag, err)
 		displayInterfaces()
 	}
+
+	var userInput types.UserInput
 
 	userInput.Interface = iface
 
@@ -95,6 +96,6 @@ func main() {
 	signalHandler(cancel)
 
 	if err := probe.Run(ctx, userInput); err != nil {
-		log.Fatalf("Failed running the probe: %v", err)
+		log.Fatalf("Failed running flat: %v", err)
 	}
 }
