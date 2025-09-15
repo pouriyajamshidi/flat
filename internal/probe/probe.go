@@ -211,7 +211,7 @@ func Run(ctx context.Context, userInput types.UserInput) error {
 	}
 	defer reader.Close()
 
-	c := make(chan []byte)
+	eventChan := make(chan []byte)
 
 	go func() {
 		for {
@@ -220,7 +220,8 @@ func Run(ctx context.Context, userInput types.UserInput) error {
 				log.Printf("Failed reading from ringbuf: %v", err)
 				return
 			}
-			c <- event.RawSample
+
+			eventChan <- event.RawSample
 		}
 	}()
 
@@ -230,17 +231,16 @@ func Run(ctx context.Context, userInput types.UserInput) error {
 			flowtable.Ticker.Stop()
 			return probe.Close()
 
-		case pkt := <-c:
+		case pkt := <-eventChan:
 			packetAttrs, ok := packet.UnmarshalBinary(pkt)
 			if !ok {
 				log.Printf("Could not unmarshall packet: %+v", pkt)
 				continue
 			}
+
+			// user has not provided and IP or port to filter on
 			if !userInput.IP.IsValid() && userInput.Port == 0 {
 				packet.CalcLatency(packetAttrs, flowtable)
-				// FIXME:
-				// } else if (userInput.Port == packetAttrs.DstPort || userInput.Port == packetAttrs.SrcPort) && (userInput.IP == packetAttrs.DstIP.Unmap() || userInput.IP == packetAttrs.SrcIP.Unmap()) {
-				// 	packet.CalcLatency(packetAttrs, flowtable)
 			} else if userInput.IP == packetAttrs.DstIP.Unmap() || userInput.IP == packetAttrs.SrcIP.Unmap() {
 				packet.CalcLatency(packetAttrs, flowtable)
 			} else if userInput.Port == packetAttrs.DstPort || userInput.Port == packetAttrs.SrcPort {

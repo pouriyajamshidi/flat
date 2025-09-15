@@ -47,9 +47,10 @@ func loadProbeObjects(obj interface{}, opts *ebpf.CollectionOptions) error {
 type probeSpecs struct {
 	probeProgramSpecs
 	probeMapSpecs
+	probeVariableSpecs
 }
 
-// probeSpecs contains programs before they are loaded into the kernel.
+// probeProgramSpecs contains programs before they are loaded into the kernel.
 //
 // It can be passed ebpf.CollectionSpec.Assign.
 type probeProgramSpecs struct {
@@ -63,12 +64,19 @@ type probeMapSpecs struct {
 	Pipe *ebpf.MapSpec `ebpf:"pipe"`
 }
 
+// probeVariableSpecs contains global variables before they are loaded into the kernel.
+//
+// It can be passed ebpf.CollectionSpec.Assign.
+type probeVariableSpecs struct {
+}
+
 // probeObjects contains all objects after they have been loaded into the kernel.
 //
 // It can be passed to loadProbeObjects or ebpf.CollectionSpec.LoadAndAssign.
 type probeObjects struct {
 	probePrograms
 	probeMaps
+	probeVariables
 }
 
 func (o *probeObjects) Close() error {
@@ -89,6 +97,12 @@ func (m *probeMaps) Close() error {
 	return _ProbeClose(
 		m.Pipe,
 	)
+}
+
+// probeVariables contains all global variables after they have been loaded into the kernel.
+//
+// It can be passed to loadProbeObjects or ebpf.CollectionSpec.LoadAndAssign.
+type probeVariables struct {
 }
 
 // probePrograms contains all programs after they have been loaded into the kernel.
