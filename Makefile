@@ -27,13 +27,13 @@ build: build-standard build-greenteagc
 .PHONY: build-standard
 build-standard:
 	@echo "Building standard binary..."
-	go build $(LDFLAGS) -o $(BINARY_STANDARD)
+	go build $(LDFLAGS) -o $(BINARY_STANDARD) cmd/flat.go
 
 
 .PHONY: build-greenteagc
 build-greenteagc:
 	@echo "Building green tea GC binary..."
-	GOEXPERIMENT=greenteagc go build $(LDFLAGS) -o $(BINARY_GREENTEAGC)
+	GOEXPERIMENT=greenteagc go build $(LDFLAGS) -o $(BINARY_GREENTEAGC) cmd/flat.go
 
 
 .PHONY: package
