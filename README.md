@@ -15,8 +15,18 @@ You can install **flat** in two ways.
 
 ### Download The Pre-compiled Binary
 
+Download and unpack the binary with the default garbage collection algorithm:
+
 ```bash
-wget https://github.com/pouriyajamshidi/flat/releases/latest/download/flat
+wget https://github.com/pouriyajamshidi/flat/releases/latest/download/flat.tar.gz
+tar xvf flat.tar.gz
+```
+
+Or with the new `green tea` garbage collection algorithm:
+
+```bash
+wget https://github.com/pouriyajamshidi/flat/releases/latest/download/flat-greenteagc.tar.gz
+tar xvf flat-greenteagc.tar.gz
 ```
 
 Then check out the [examples](#examples).
@@ -34,6 +44,9 @@ Change directory to `flat`:
 ```bash
 cd flat
 ```
+
+> [!TIP]
+> Simply run `make` and you will have **all** you need. If you do not want to use `make`, keep on reading.
 
 While at the root of project directory, to compile the **C** code and generate the helper functions, run:
 
@@ -75,6 +88,6 @@ sudo ./flat -i eth0 -ip 1.1.1.1 -port 53
 
 ---
 
-## Acknolegments
+## Acknowledgments
 
 Heavily inspired by [flowlat](https://github.com/markpash/flowlat).
