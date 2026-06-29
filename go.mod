@@ -3,7 +3,7 @@ module github.com/pouriyajamshidi/flat
 go 1.26.3
 
 require (
-	github.com/cilium/ebpf v0.21.0
+	github.com/cilium/ebpf v0.22.0
 	github.com/google/gopacket v1.1.19
 	github.com/gookit/color v1.6.1
 	github.com/stretchr/testify v1.11.1
