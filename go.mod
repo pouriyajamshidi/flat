@@ -6,14 +6,12 @@ require (
 	github.com/cilium/ebpf v0.22.0
 	github.com/google/gopacket v1.1.19
 	github.com/gookit/color v1.6.1
-	github.com/stretchr/testify v1.11.1
+	github.com/stretchr/testify v1.12.0
 	github.com/vishvananda/netlink v1.3.1
 	golang.org/x/sys v0.47.0
 )
 
 require (
-	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
-	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
 	github.com/vishvananda/netns v0.0.5 // indirect
 	github.com/xo/terminfo v0.0.0-20220910002029-abceb7e1c41e // indirect
 	golang.org/x/exp v0.0.0-20260508232706-74f9aab9d74a // indirect
