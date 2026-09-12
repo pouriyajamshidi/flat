@@ -22,8 +22,8 @@ func signalHandler(cancel context.CancelFunc) {
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
 
 	go func() {
-		<-sigChan
-		log.Println("\nCaught SIGINT... Exiting")
+		sig := <-sigChan
+		log.Printf("Caught %v... Exiting", sig)
 		cancel()
 	}()
 }
@@ -33,8 +33,7 @@ func displayInterfaces() {
 	interfaces, err := net.Interfaces()
 
 	if err != nil {
-		log.Fatal("Failed fetching network interfaces")
-		return
+		log.Fatalf("Failed fetching network interfaces: %v", err)
 	}
 
 	for i, iface := range interfaces {
@@ -74,8 +73,8 @@ func getUserInput() types.UserInput {
 	}
 
 	if *portFlag != 0 {
-		if *portFlag < 1 || *portFlag > 65535 {
-			log.Printf("Could not parse port %v: %v", *portFlag, err)
+		if *portFlag > 65535 {
+			log.Printf("Invalid port %v: must be between 1 and 65535", *portFlag)
 			os.Exit(1)
 		}
 

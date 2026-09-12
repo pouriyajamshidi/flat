@@ -55,10 +55,8 @@ func (table *FlowTable) Prune() {
 			log.Printf("Pruning stale entry from flow table: %v", hash)
 
 			table.Delete(hash)
-
-			return true
 		}
-		return false
+		return true
 	})
 }
 

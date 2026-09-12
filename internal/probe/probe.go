@@ -17,7 +17,6 @@ import (
 
 const tenMegaBytes = 1024 * 1024 * 10
 const twentyMegaBytes = tenMegaBytes * 2
-const fortyMegaBytes = twentyMegaBytes * 2
 
 type probe struct {
 	iface      netlink.Link
@@ -28,7 +27,7 @@ type probe struct {
 }
 
 func setRlimit() error {
-	log.Printf("Setting rlimit - soft: %v | hard: %v\n", twentyMegaBytes, fortyMegaBytes)
+	log.Printf("Setting rlimit - soft: %v | hard: %v\n", tenMegaBytes, twentyMegaBytes)
 
 	return unix.Setrlimit(unix.RLIMIT_MEMLOCK, &unix.Rlimit{
 		Cur: tenMegaBytes,
@@ -135,48 +134,66 @@ func newProbe(iface netlink.Link) (*probe, error) {
 
 	if err := prbe.loadObjects(); err != nil {
 		log.Printf("Failed loading probe objects: %v", err)
+		prbe.Close()
 		return nil, err
 	}
 
 	if err := prbe.createQdisc(); err != nil {
 		log.Printf("Failed creating qdisc: %v", err)
+		prbe.Close()
 		return nil, err
 	}
 
 	if err := prbe.createFilters(); err != nil {
 		log.Printf("Failed creating qdisc filters: %v", err)
+		prbe.Close()
 		return nil, err
 	}
 
 	return &prbe, nil
 }
 
+// Close removes whatever the probe has set up so far.
+// It keeps going on errors so a partially created probe is still cleaned up.
 func (p *probe) Close() error {
-	log.Println("Removing qdisc")
-	if err := p.handle.QdiscDel(p.qdisc); err != nil {
-		log.Println("Failed deleting qdisc")
-		return err
+	var firstErr error
+
+	if p.qdisc != nil {
+		log.Println("Removing qdisc")
+		if err := p.handle.QdiscDel(p.qdisc); err != nil {
+			log.Printf("Failed deleting qdisc: %v", err)
+			firstErr = err
+		}
 	}
 
-	// log.Println("Removing qdisc filters")
-
-	// for _, filter := range p.filters {
-	// 	if err := p.handle.FilterDel(filter); err != nil {
-	// 		log.Println("Failed deleting qdisc filters")
-	// 		return err
-	// 	}
-	// }
+	if p.bpfObjects != nil {
+		log.Println("Closing eBPF object")
+		if err := p.bpfObjects.Close(); err != nil {
+			log.Printf("Failed closing eBPF object: %v", err)
+			if firstErr == nil {
+				firstErr = err
+			}
+		}
+	}
 
 	log.Println("Deleting handle")
 	p.handle.Delete()
 
-	log.Println("Closing eBPF object")
-	if err := p.bpfObjects.Close(); err != nil {
-		log.Println("Failed closing eBPF object")
-		return err
+	return firstErr
+}
+
+// matchesFilter reports whether a packet matches the user's IP and port filters.
+// A filter that is not set matches everything.
+func matchesFilter(pkt packet.Packet, userInput types.UserInput) bool {
+	if userInput.IP.IsValid() && userInput.IP != pkt.SrcIP.Unmap() && userInput.IP != pkt.DstIP.Unmap() {
+		return false
 	}
 
-	return nil
+	if userInput.Port != 0 && userInput.Port != pkt.SrcPort && userInput.Port != pkt.DstPort {
+		return false
+	}
+
+	return true
 }
 
 // Run attaches the probe, reads from the eBPF map
@@ -207,7 +224,9 @@ func Run(ctx context.Context, userInput types.UserInput) error {
 
 	reader, err := ringbuf.NewReader(pipe)
 	if err != nil {
-		log.Fatalf("opening ringbuf reader: %s", err)
+		log.Printf("Failed opening ringbuf reader: %v", err)
+		probe.Close()
+		return err
 	}
 	defer reader.Close()
 
@@ -238,12 +257,7 @@ func Run(ctx context.Context, userInput types.UserInput) error {
 				continue
 			}
 
-			// user has not provided and IP or port to filter on
-			if !userInput.IP.IsValid() && userInput.Port == 0 {
-				packet.CalcLatency(packetAttrs, flowtable)
-			} else if userInput.IP == packetAttrs.DstIP.Unmap() || userInput.IP == packetAttrs.SrcIP.Unmap() {
-				packet.CalcLatency(packetAttrs, flowtable)
-			} else if userInput.Port == packetAttrs.DstPort || userInput.Port == packetAttrs.SrcPort {
+			if matchesFilter(packetAttrs, userInput) {
 				packet.CalcLatency(packetAttrs, flowtable)
 			}
 		}

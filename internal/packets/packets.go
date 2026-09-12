@@ -14,7 +14,7 @@ func EthernetHeader(proto layers.EthernetType) []byte {
 
 	eth := &layers.Ethernet{
 		SrcMAC:       net.HardwareAddr{0, 1, 2, 3, 4, 5},
-		DstMAC:       net.HardwareAddr{5, 4, 3, 2, 1, 0},
+		DstMAC:       net.HardwareAddr{4, 4, 3, 2, 1, 0},
 		EthernetType: proto,
 	}
 
@@ -30,6 +30,8 @@ func IPv4Header(proto layers.IPProtocol) []byte {
 	buf := gopacket.NewSerializeBuffer()
 
 	ip := &layers.IPv4{
+		Version:  4,
+		IHL:      5,
 		SrcIP:    net.IP{1, 1, 1, 1},
 		DstIP:    net.IP{2, 2, 2, 2},
 		Protocol: proto,

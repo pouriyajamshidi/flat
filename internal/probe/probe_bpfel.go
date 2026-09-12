@@ -12,6 +12,14 @@ import (
 	"github.com/cilium/ebpf"
 )
 
+// Names of all BPF objects in the ELF.
+//
+// Used for safe lookups in a Collection or CollectionSpec.
+const (
+	probeMapPipe  = "pipe"
+	probeProgFlat = "flat"
+)
+
 // loadProbe returns the embedded CollectionSpec for probe.
 func loadProbe() (*ebpf.CollectionSpec, error) {
 	reader := bytes.NewReader(_ProbeBytes)
@@ -32,7 +40,7 @@ func loadProbe() (*ebpf.CollectionSpec, error) {
 //	*probeMaps
 //
 // See ebpf.CollectionSpec.LoadAndAssign documentation for details.
-func loadProbeObjects(obj interface{}, opts *ebpf.CollectionOptions) error {
+func loadProbeObjects(obj any, opts *ebpf.CollectionOptions) error {
 	spec, err := loadProbe()
 	if err != nil {
 		return err
