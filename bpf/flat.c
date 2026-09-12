@@ -43,13 +43,18 @@ static inline int handle_ip_packet(void* head, void* tail, uint32_t* offset, str
 
     switch (bpf_ntohs(eth->h_proto)) {
     case ETH_P_IP:
-        *offset = sizeof(struct ethhdr) + sizeof(struct iphdr);
-
-        if (head + (*offset) > tail) { // If the next layer is not IP, let the packet pass
+        if (head + sizeof(struct ethhdr) + sizeof(struct iphdr) > tail) { // If the next layer is not IP, let the packet pass
             return TC_ACT_OK;
         }
 
         ip = head + sizeof(struct ethhdr);
+
+        if (ip->ihl < 5) { // Malformed header
+            return TC_ACT_OK;
+        }
+
+        // IHL is in 4-byte words and includes any IP options
+        *offset = sizeof(struct ethhdr) + ip->ihl * 4;
 
         if (ip->protocol != IPPROTO_TCP && ip->protocol != IPPROTO_UDP) {
             return TC_ACT_OK;
@@ -100,18 +105,29 @@ static inline int handle_ip_segment(void* head, void* tail, uint32_t* offset, st
 
     switch (pkt->protocol) {
     case IPPROTO_TCP:
+        if (head + *offset + sizeof(struct tcphdr) > tail) {
+            return TC_ACT_OK;
+        }
+
         tcp = head + *offset;
 
-        if (tcp->syn) { // We have SYN or SYN/ACK
-            pkt->src_port = tcp->source;
-            pkt->dst_port = tcp->dest;
-            pkt->syn = tcp->syn;
-            pkt->ack = tcp->ack;
-            pkt->ts = bpf_ktime_get_ns();
-
-            return 1;
+        if (!tcp->syn) { // We only care about SYN and SYN/ACK
+            return TC_ACT_OK;
         }
+
+        pkt->src_port = tcp->source;
+        pkt->dst_port = tcp->dest;
+        pkt->syn = tcp->syn;
+        pkt->ack = tcp->ack;
+        pkt->ts = bpf_ktime_get_ns();
+
+        return 1;
+
     case IPPROTO_UDP:
+        if (head + *offset + sizeof(struct udphdr) > tail) {
+            return TC_ACT_OK;
+        }
+
         udp = head + *offset;
 
         pkt->src_port = udp->source;
@@ -157,12 +173,6 @@ int flat(struct __sk_buff* skb) {
     uint32_t offset = 0;
 
     if (handle_ip_packet(head, tail, &offset, pkt) == TC_ACT_OK) {
-        bpf_ringbuf_discard(pkt, 0);
-        return TC_ACT_OK;
-    }
-
-    // Check if TCP/UDP header is fitting this packet
-    if (head + offset + sizeof(struct tcphdr) > tail || head + offset + sizeof(struct udphdr) > tail) {
         bpf_ringbuf_discard(pkt, 0);
         return TC_ACT_OK;
     }
