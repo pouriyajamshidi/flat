@@ -33,10 +33,12 @@ Then check out the [examples](#examples).
 
 ### Compile From Source
 
+You will need `Go`, `clang`, and the `libbpf` and Linux kernel headers (on Debian/Ubuntu: `sudo apt install clang libbpf-dev linux-libc-dev`).
+
 Clone the repository:
 
 ```bash
-git clone https://github.com/pouriyajamshidi/flat .
+git clone https://github.com/pouriyajamshidi/flat
 ```
 
 Change directory to `flat`:
@@ -74,6 +76,8 @@ sudo ./flat -i eth0 -port 53
 # Or
 sudo ./flat -i eth0 -ip 1.1.1.1 -port 53
 ```
+
+When both `-ip` and `-port` are given, a flow must match both.
 
 ## Flags
 
