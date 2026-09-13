@@ -15,18 +15,16 @@ You can install **flat** in two ways.
 
 ### Download The Pre-compiled Binary
 
-Download and unpack the binary with the default garbage collection algorithm:
+Download, verify, and install the latest release to `/usr/local/bin` (Linux amd64 or arm64):
 
 ```bash
-wget https://github.com/pouriyajamshidi/flat/releases/latest/download/flat.tar.gz
-tar xvf flat.tar.gz
-```
-
-Or with the new `green tea` garbage collection algorithm:
-
-```bash
-wget https://github.com/pouriyajamshidi/flat/releases/latest/download/flat-greenteagc.tar.gz
-tar xvf flat-greenteagc.tar.gz
+ARCH=$(uname -m | sed 's/x86_64/amd64/; s/aarch64/arm64/') &&
+cd "$(mktemp -d)" &&
+curl -fLO "https://github.com/pouriyajamshidi/flat/releases/latest/download/flat_linux_${ARCH}.tar.gz" &&
+curl -fLO https://github.com/pouriyajamshidi/flat/releases/latest/download/checksums.txt &&
+sha256sum -c --ignore-missing checksums.txt &&
+tar xf "flat_linux_${ARCH}.tar.gz" flat &&
+sudo install flat -D -t /usr/local/bin/
 ```
 
 Then check out the [examples](#examples).
@@ -48,7 +46,7 @@ cd flat
 ```
 
 > [!TIP]
-> Simply run `make` and you will have **all** you need. If you do not want to use `make`, keep on reading.
+> Simply run `make` and you will have the `flat` binary. If you do not want to use `make`, keep on reading.
 
 While at the root of project directory, to compile the **C** code and generate the helper functions, run:
 
@@ -68,14 +66,16 @@ Run it with elevated privileges:
 
 ```bash
 # Replace eth0 with your desired interface name
-sudo ./flat -i eth0
+sudo flat -i eth0
 # Or
-sudo ./flat -i eth0 -ip 1.1.1.1
+sudo flat -i eth0 -ip 1.1.1.1
 # Or
-sudo ./flat -i eth0 -port 53
+sudo flat -i eth0 -port 53
 # Or
-sudo ./flat -i eth0 -ip 1.1.1.1 -port 53
+sudo flat -i eth0 -ip 1.1.1.1 -port 53
 ```
+
+If you compiled from source, run `sudo ./flat` from the project directory instead.
 
 When both `-ip` and `-port` are given, a flow must match both.
 
