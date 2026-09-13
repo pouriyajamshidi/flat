@@ -1,23 +1,16 @@
-#include <stdbool.h>
-#include <stdint.h>
-#include <stdlib.h>
-
-#include <linux/string.h>
-#include <linux/bpf.h>
-#include <linux/bpf_common.h>
-
-#include <linux/if_ether.h>
-#include <linux/if_packet.h>
-#include <linux/in.h>
-#include <linux/in6.h>
-#include <linux/ip.h>
-#include <linux/ipv6.h>
-#include <linux/tcp.h>
-#include <linux/udp.h>
-#include <linux/pkt_cls.h>
+// Packet header layouts never change, so skip CO-RE and its need for kernel BTF
+#define BPF_NO_PRESERVE_ACCESS_INDEX
+#include "vmlinux.h"
 
 #include <bpf/bpf_endian.h>
 #include <bpf/bpf_helpers.h>
+
+// vmlinux.h only has types, so the macros we need are defined here
+#define ETH_P_IP         0x0800
+#define ETH_P_IPV6       0x86DD
+#define TC_ACT_OK        0
+#define PACKET_BROADCAST 1
+#define PACKET_MULTICAST 2
 
 struct {
     __uint(type, BPF_MAP_TYPE_RINGBUF);
@@ -33,10 +26,10 @@ struct packet_t {
     __u8 ttl;
     bool syn;
     bool ack;
-    uint64_t ts;
+    __u64 ts;
 };
 
-static inline int handle_ip_packet(void* head, void* tail, uint32_t* offset, struct packet_t* pkt) {
+static inline int handle_ip_packet(void* head, void* tail, __u32* offset, struct packet_t* pkt) {
     struct ethhdr* eth = head;
     struct iphdr* ip;
     struct ipv6hdr* ipv6;
@@ -99,7 +92,7 @@ static inline int handle_ip_packet(void* head, void* tail, uint32_t* offset, str
     }
 }
 
-static inline int handle_ip_segment(void* head, void* tail, uint32_t* offset, struct packet_t* pkt) {
+static inline int handle_ip_segment(void* head, void* tail, __u32* offset, struct packet_t* pkt) {
     struct tcphdr* tcp;
     struct udphdr* udp;
 
@@ -168,9 +161,9 @@ int flat(struct __sk_buff* skb) {
 
     // Zero-initialize the memory region of pkt
     // so that we do not access garbage
-    memset(pkt, 0, sizeof(struct packet_t));
+    __builtin_memset(pkt, 0, sizeof(struct packet_t));
 
-    uint32_t offset = 0;
+    __u32 offset = 0;
 
     if (handle_ip_packet(head, tail, &offset, pkt) == TC_ACT_OK) {
         bpf_ringbuf_discard(pkt, 0);
