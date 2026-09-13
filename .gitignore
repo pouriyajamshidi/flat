@@ -1,2 +1,4 @@
 /flat
 /flat.tar.gz
+/internal/probe/probe_bpf*.go
+/internal/probe/probe_bpf*.o
