@@ -276,6 +276,7 @@ func Run(ctx context.Context, userInput types.UserInput) error {
 	for {
 		select {
 		case <-ctx.Done():
+			log.Printf("%v... Exiting", context.Cause(ctx))
 			flowtable.Ticker.Stop()
 			return probe.Close()
 

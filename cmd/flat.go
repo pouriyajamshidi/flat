@@ -16,18 +16,6 @@ import (
 	"github.com/vishvananda/netlink"
 )
 
-// signalHandler catches SIGINT and SIGTERM then exits the program
-func signalHandler(cancel context.CancelFunc) {
-	sigChan := make(chan os.Signal, 1)
-	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
-
-	go func() {
-		sig := <-sigChan
-		log.Printf("Caught %v... Exiting", sig)
-		cancel()
-	}()
-}
-
 // displayInterfaces displays all available network interfaces
 func displayInterfaces() {
 	interfaces, err := net.Interfaces()
@@ -89,10 +77,12 @@ func getUserInput() types.UserInput {
 func main() {
 	userInput := getUserInput()
 
-	ctx := context.Background()
-	ctx, cancel := context.WithCancel(ctx)
+	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	defer stop()
 
-	signalHandler(cancel)
+	// After the first signal, restore the default behavior
+	// so a second Ctrl+C exits right away if the cleanup hangs
+	context.AfterFunc(ctx, stop)
 
 	if err := probe.Run(ctx, userInput); err != nil {
 		log.Fatalf("Failed running flat: %v", err)

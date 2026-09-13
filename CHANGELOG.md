@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Changed
+
+- Signal handling uses `signal.NotifyContext`. A second Ctrl+C now exits right away if shutdown hangs.
+
 ## v0.6.0
 
 ### Changed
