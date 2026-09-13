@@ -7,7 +7,7 @@ jobs:
   stale:
     runs-on: ubuntu-latest
     permissions:
-      issues: read
+      issues: write
       pull-requests: write
     steps:
       - uses: actions/stale@v11.0.0
