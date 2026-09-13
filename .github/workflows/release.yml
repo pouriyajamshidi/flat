@@ -3,9 +3,17 @@ name: Release
 on:
   push:
     tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Version to release, e.g. v0.6.0. The tag is created on the selected branch if it does not exist."
+        required: true
 
 permissions:
   contents: write
+
+env:
+  TAG: ${{ inputs.tag || github.ref_name }}
 
 jobs:
   release:
@@ -20,8 +28,8 @@ jobs:
       # Fails early if CHANGELOG.md has no "## <tag>" section
       - name: Extract release notes
         run: |
-          awk -v heading="## $GITHUB_REF_NAME" '$0 == heading {found=1; next} /^## /{found=0} found' CHANGELOG.md > notes.md
-          grep -q '[^[:space:]]' notes.md || { echo "No '## $GITHUB_REF_NAME' section in CHANGELOG.md"; exit 1; }
+          awk -v heading="## $TAG" '$0 == heading {found=1; next} /^## /{found=0} found' CHANGELOG.md > notes.md
+          grep -q '[^[:space:]]' notes.md || { echo "No '## $TAG' section in CHANGELOG.md"; exit 1; }
 
       - name: Install eBPF build dependencies
         run: sudo apt-get update && sudo apt-get install -y clang llvm libbpf-dev
@@ -32,4 +40,4 @@ jobs:
       - name: Create release
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release create "$GITHUB_REF_NAME" flat_linux_*.tar.gz checksums.txt --notes-file notes.md
+        run: gh release create "$TAG" flat_linux_*.tar.gz checksums.txt --notes-file notes.md --target "$GITHUB_SHA"
