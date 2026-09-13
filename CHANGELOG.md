@@ -1,6 +1,13 @@
 # Changelog
 
-## Unreleased
+## v0.6.0
+
+### Changed
+
+- Releases ship `flat_linux_amd64.tar.gz` and `flat_linux_arm64.tar.gz` with a `checksums.txt`. The old `flat.tar.gz` and `flat-greenteagc.tar.gz` are gone, since Green Tea GC is the default since Go 1.26.
+- `make` now builds the `flat` binary. Use `make release` to build the release archives.
+- Releases are built and published by GitHub Actions when a `v*` tag is pushed.
+- The generated eBPF files (`internal/probe/probe_bpf*.go` and `.o`) are no longer in git. Run `go generate ./...` (or `make`) before building.
 
 ### Fixed
 
