@@ -1,4 +1,5 @@
 /flat
-/flat.tar.gz
+/flat_linux_*.tar.gz
+/checksums.txt
 /internal/probe/probe_bpf*.go
 /internal/probe/probe_bpf*.o
