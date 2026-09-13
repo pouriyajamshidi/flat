@@ -97,15 +97,19 @@ func CalcLatency(pkt Packet, table *flowtable.FlowTable) {
 
 	pktHash := pkt.Hash()
 
+	// A SYN starts the measurement. A retransmitted SYN restarts it,
+	// so the retransmission wait is not counted as latency.
+	if pkt.Syn && !pkt.Ack {
+		table.Insert(pktHash, pkt.TimeStamp)
+		return
+	}
+
 	ts, ok := table.Get(pktHash)
 
-	if !ok && pkt.Syn {
-		table.Insert(pktHash, pkt.TimeStamp)
-		return
-	} else if !ok && proto == "UDP" {
-		table.Insert(pktHash, pkt.TimeStamp)
-		return
-	} else if !ok {
+	if !ok {
+		if proto == "UDP" {
+			table.Insert(pktHash, pkt.TimeStamp)
+		}
 		return
 	}
 

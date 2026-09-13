@@ -17,6 +17,14 @@ struct {
     __uint(max_entries, 512 * 1024); // 512 KB
 } pipe SEC(".maps");
 
+// Number of packets that did not fit in the ring buffer
+struct {
+    __uint(type, BPF_MAP_TYPE_PERCPU_ARRAY);
+    __type(key, __u32);
+    __type(value, __u64);
+    __uint(max_entries, 1);
+} dropped SEC(".maps");
+
 struct packet_t {
     struct in6_addr src_ip;
     struct in6_addr dst_ip;
@@ -153,29 +161,29 @@ int flat(struct __sk_buff* skb) {
         return TC_ACT_OK;
     }
 
-    struct packet_t* pkt = NULL;
-    pkt = bpf_ringbuf_reserve(&pipe, sizeof(struct packet_t), 0);
-    if (!pkt) {
-        return TC_ACT_OK;
-    }
-
-    // Zero-initialize the memory region of pkt
-    // so that we do not access garbage
-    __builtin_memset(pkt, 0, sizeof(struct packet_t));
+    // Zero it, since IPv4 packets only fill part of the address fields.
+    // See https://github.com/pouriyajamshidi/flat/issues/30
+    struct packet_t pkt;
+    __builtin_memset(&pkt, 0, sizeof(pkt));
 
     __u32 offset = 0;
 
-    if (handle_ip_packet(head, tail, &offset, pkt) == TC_ACT_OK) {
-        bpf_ringbuf_discard(pkt, 0);
+    if (handle_ip_packet(head, tail, &offset, &pkt) == TC_ACT_OK) {
         return TC_ACT_OK;
     }
 
-    if (handle_ip_segment(head, tail, &offset, pkt) == TC_ACT_OK) {
-        bpf_ringbuf_discard(pkt, 0);
+    if (handle_ip_segment(head, tail, &offset, &pkt) == TC_ACT_OK) {
         return TC_ACT_OK;
     }
 
-    bpf_ringbuf_submit(pkt, 0);
+    // Fails when the ring buffer is full, i.e. user space is not keeping up
+    if (bpf_ringbuf_output(&pipe, &pkt, sizeof(pkt), 0) < 0) {
+        __u32 key = 0;
+        __u64* count = bpf_map_lookup_elem(&dropped, &key);
+        if (count) {
+            (*count)++;
+        }
+    }
 
     return TC_ACT_OK;
 }
