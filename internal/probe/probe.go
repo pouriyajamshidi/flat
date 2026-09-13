@@ -2,7 +2,10 @@ package probe
 
 import (
 	"context"
+	"errors"
 	"log"
+	"os"
+	"time"
 
 	"github.com/cilium/ebpf/ringbuf"
 	"github.com/pouriyajamshidi/flat/clsact"
@@ -13,8 +16,9 @@ import (
 	"golang.org/x/sys/unix"
 )
 
-// Little-endian only: bpf/vmlinux.h has little-endian bitfield layouts
-//go:generate go run github.com/cilium/ebpf/cmd/bpf2go -target bpfel probe ../../bpf/flat.c - -O2 -Wall -Werror -Wno-address-of-packed-member
+// Little-endian only: bpf/vmlinux.h has little-endian bitfield layouts.
+// -fms-extensions: newer kernels embed unnamed structs, which vmlinux.h needs to parse correctly.
+//go:generate go run github.com/cilium/ebpf/cmd/bpf2go -target bpfel probe ../../bpf/flat.c -- -O2 -Wall -Werror -Wno-address-of-packed-member -fms-extensions -Wno-microsoft-anon-tag
 
 const tenMegaBytes = 1024 * 1024 * 10
 const twentyMegaBytes = tenMegaBytes * 2
@@ -197,6 +201,22 @@ func matchesFilter(pkt packet.Packet, userInput types.UserInput) bool {
 	return true
 }
 
+// droppedPackets returns how many packets did not fit in the ring buffer, summed over all CPUs
+func (p *probe) droppedPackets() (uint64, error) {
+	var perCPU []uint64
+
+	if err := p.bpfObjects.Dropped.Lookup(uint32(0), &perCPU); err != nil {
+		return 0, err
+	}
+
+	var total uint64
+	for _, count := range perCPU {
+		total += count
+	}
+
+	return total, nil
+}
+
 // Run attaches the probe, reads from the eBPF map
 // as well as calculating and displaying the flow latencies
 func Run(ctx context.Context, userInput types.UserInput) error {
@@ -236,6 +256,9 @@ func Run(ctx context.Context, userInput types.UserInput) error {
 	go func() {
 		for {
 			event, err := reader.Read()
+			if errors.Is(err, os.ErrClosed) { // The reader is closed on shutdown
+				return
+			}
 			if err != nil {
 				log.Printf("Failed reading from ringbuf: %v", err)
 				return
@@ -245,11 +268,29 @@ func Run(ctx context.Context, userInput types.UserInput) error {
 		}
 	}()
 
+	dropTicker := time.NewTicker(10 * time.Second)
+	defer dropTicker.Stop()
+
+	var lastDropped uint64
+
 	for {
 		select {
 		case <-ctx.Done():
 			flowtable.Ticker.Stop()
 			return probe.Close()
+
+		case <-dropTicker.C:
+			dropped, err := probe.droppedPackets()
+			if err != nil {
+				log.Printf("Failed reading dropped packet count: %v", err)
+				continue
+			}
+
+			if dropped > lastDropped {
+				log.Printf("Ring buffer full: dropped %d packets in the last 10 seconds, results may be missing", dropped-lastDropped)
+			}
+
+			lastDropped = dropped
 
 		case pkt := <-eventChan:
 			packetAttrs, ok := packet.UnmarshalBinary(pkt)
