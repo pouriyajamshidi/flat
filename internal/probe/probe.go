@@ -13,7 +13,8 @@ import (
 	"golang.org/x/sys/unix"
 )
 
-//go:generate go run github.com/cilium/ebpf/cmd/bpf2go probe ../../bpf/flat.c - -O2  -Wall -Werror -Wno-address-of-packed-member
+// Little-endian only: bpf/vmlinux.h has little-endian bitfield layouts
+//go:generate go run github.com/cilium/ebpf/cmd/bpf2go -target bpfel probe ../../bpf/flat.c - -O2 -Wall -Werror -Wno-address-of-packed-member
 
 const tenMegaBytes = 1024 * 1024 * 10
 const twentyMegaBytes = tenMegaBytes * 2
