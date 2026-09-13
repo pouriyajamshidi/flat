@@ -31,7 +31,7 @@ Then check out the [examples](#examples).
 
 ### Compile From Source
 
-You will need `Go`, `clang`, and the `libbpf` and Linux kernel headers (on Debian/Ubuntu: `sudo apt install clang libbpf-dev linux-libc-dev`).
+You will need `Go`, `clang`, `llvm`, and the `libbpf` headers (on Debian/Ubuntu: `sudo apt install clang llvm libbpf-dev`).
 
 Clone the repository:
 
